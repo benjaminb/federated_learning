@@ -8,8 +8,10 @@ def pickle_brown_sentences(categories: List[str], outfile: str) -> None:
     from nltk.corpus import brown
 
     # Creates dictionary and strips off last char from each sentence, which is usually '.'
+    # Requires sentences to have >= 3 tokens (so at least 2 after stripping)
     sentences = {
-        cat: [sent[:-1] for sent in brown.sents(categories=cat)]
+        cat:
+        [sent[:-1] for sent in brown.sents(categories=cat) if len(sent) > 2]
         for cat in categories
     }
 

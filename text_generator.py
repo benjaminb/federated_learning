@@ -10,13 +10,20 @@ class TextGenerator():
     def __init__(self, sentences):
         self.sentences = sentences
 
-    def sample(self) -> Tuple[List[str], str]:
-        sentence = []
-        # Ensure sentence has at least 2 tokens
-        while len(sentence) < 2:
-            sentence = random.choice(self.sentences)
-        cutoff = random.randint(0, len(sentence) - 1)
-        return sentence[:cutoff], sentence[cutoff]
+    def generate_samples(self, n: int) -> Tuple[List[str], str]:
+        samples = []
+        for _ in range(n):
+            sentence = []
+
+            # Ensure sentence has at least 2 tokens
+            while len(sentence) < 2:
+                sentence = random.choice(self.sentences)
+
+            # Choose cutoff & mask it
+            cutoff = random.randint(0, len(sentence) - 1)
+            masked_sentence = sentence[:cutoff] + ["[MASK]"]
+            samples.append((masked_sentence, sentence[cutoff]))
+        return samples
 
 
 # For testing
@@ -25,5 +32,5 @@ if __name__ == '__main__':
     sentences = pickle.load(open('brown.pkl', 'rb')).get('editorial')
     gen = TextGenerator(sentences)
 
-    for i in range(10):
-        print(gen.sample())
+    samples = gen.generate_samples(5)
+    print(samples)
