@@ -1,10 +1,3 @@
-# Load data
-# load in data from pickle
-# create Dataset
-# create DataLoader
-# create model
-# define training step, produce loss
-
 import string, torch
 from torch.utils.data import Dataset, DataLoader
 from transformers import DistilBertTokenizerFast, DistilBertForMaskedLM
