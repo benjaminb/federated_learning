@@ -2,8 +2,8 @@ import torch
 from transformers import BertTokenizerFast
 
 
-class LSTM_NWP(torch.nn.Module):
-    def __init__(self, hidden_size: int, tokenizer):
+class LSTM(torch.nn.Module):
+    def __init__(self, hidden_size: int, tokenizer=None):
         super().__init__()
         self.hidden_size = hidden_size
         self.tokenizer = BertTokenizerFast.from_pretrained(
