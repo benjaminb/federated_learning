@@ -1,5 +1,10 @@
 .vscode/
 
+# Data and test files
+*.pkl
+test.py
+test_gen.py
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
