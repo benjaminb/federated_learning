@@ -40,5 +40,4 @@ class LSTM(torch.nn.Module):
 
         # Linear
         x = self.linear(x)
-        x = torch.squeeze(x)  #bc it's a single sample
-        return x
+        return x.view(1, -1)  #[1, vocab_size]

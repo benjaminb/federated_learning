@@ -2,8 +2,7 @@
 # randomly sample a sentence and a cutoff, returning the partial sentence
 # and true next word (input, label)
 
-import nltk, random
-import string
+import nltk, random, string
 from typing import Tuple, List
 
 
@@ -26,8 +25,10 @@ def text_to_sentences(text: str) -> List[str]:
     return sents
 
 
-class PromptGenerator():
-    def __init__(self, text):
+class TextGenerator():
+    def __init__(self, path_to_text: str):
+        with open(path_to_text, 'r') as f:
+            text = f.read()
         self.sentences = text_to_sentences(text)
 
     def generate_sample(self) -> Tuple[str, str]:
@@ -44,28 +45,11 @@ class PromptGenerator():
                 words
             ) > 2, "Sentence too short in PromptGenerator.generate_sample"
 
-        print(f"Chosen sentence: {sentence}")
         # Choose cutoff & mask it
         cutoff = random.randint(0, len(words) - 2)  # -2 to avoid punctuation
         label = words[cutoff]
         prompt = sentence[:sentence.rfind(label)]
         return prompt, label
-
-    def generate_samples(self, n: int) -> Tuple[List[str], str]:
-
-        samples = []
-        for _ in range(n):
-            sentence = []
-
-            # Ensure sentence has at least 2 tokens
-            while len(sentence) < 2:
-                sentence = random.choice(self.sentences)
-
-            # Choose cutoff & mask it
-            cutoff = random.randint(0, len(sentence) - 1)
-            masked_sentence = sentence[:cutoff] + ["[MASK]"]
-            samples.append((masked_sentence, sentence[cutoff]))
-        return samples
 
 
 # For testing
