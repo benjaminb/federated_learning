@@ -7,6 +7,16 @@ from confluent_kafka.serialization import StringSerializer
 
 
 def run_model_producer(conn: Pipe) -> None:
+    def ack(err, msg):
+        """@err: error thrown by producer
+            @msg: the kafka message object"""
+        if err:
+            print(f"Failed to deliver message: {msg.key()}\n{err.str()}")
+        else:
+            print(
+                f"Model layer weight update message produced: {msg.key()}: {len(msg.value()):,} bytes"
+            )
+
     print("Model producer starting...")
 
     producer_config = {
@@ -32,7 +42,8 @@ def run_model_producer(conn: Pipe) -> None:
 
             # Get the model from the pipe
             model = conn.recv()
-
+            print("Model producer received an update...")
+            print(f"model.updated={model.updated}")
             # Confirm model has been updated
             if not model.updated:
                 continue
@@ -46,7 +57,7 @@ def run_model_producer(conn: Pipe) -> None:
                 producer.produce(topic='update-model-test',
                                  key=ser_key,
                                  value=value,
-                                 callback=None)
+                                 callback=ack)
 
                 model.updated = False
 

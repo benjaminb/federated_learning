@@ -1,4 +1,6 @@
+from multiprocessing import Pipe
 import pickle
+import time
 import torch
 from confluent_kafka import Producer
 from confluent_kafka.serialization import StringSerializer
@@ -8,7 +10,7 @@ from lstm_model import LSTM
 from text_generator import TextGenerator
 
 
-def simulate_producer(path_to_text: str):
+def run_grad_producer(conn: Pipe, path_to_text: str):
     # Acknowledgement callback
     def ack(err, msg):
         """@err: error thrown by producer
@@ -16,7 +18,10 @@ def simulate_producer(path_to_text: str):
         if err:
             print(f"Failed to deliver message: {msg.key()}\n{err.str()}")
         else:
-            print(f"Message produced: {msg.key()}: {len(msg.value()):,} bytes")
+            # print(
+            #     f"Gradient message produced: {msg.key()}: {len(msg.value()):,} bytes"
+            # )
+            pass
 
     #TODO: Get the tokenizer from the model instance instead?
     # tokenizer = BertTokenizerFast.from_pretrained('bert-base-uncased')
@@ -49,7 +54,12 @@ def simulate_producer(path_to_text: str):
     named_params = list(model.named_parameters())
 
     try:
-        for val in range(2):
+        # Make this run for max 1 min
+        start = time.time()
+        while time.time() < start + 60:
+            # Check if there's a new model
+            if conn.poll(2):
+                model = conn.recv()
             """
             SIMULATE USAGE
             """

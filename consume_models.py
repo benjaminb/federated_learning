@@ -47,11 +47,11 @@ def run_model_consumer(conn: Pipe, consumer_group_name: str) -> None:
         return list(weight_dict.keys()) == layer_names
 
     try:
-        weight_dict = defaultdict(list)
+        weight_dict = defaultdict(None)
 
         print("Model consumer started...")
         while True:
-            msg = consumer.poll(1)
+            msg = consumer.poll(2)
 
             # Case: no new messages so continue
             if msg is None:
@@ -61,17 +61,15 @@ def run_model_consumer(conn: Pipe, consumer_group_name: str) -> None:
             if not msg.error():
                 key = deserialize_str(msg.key(), None)
                 value = pickle.loads(msg.value())
-                weight_dict[key] += value
+                weight_dict[key] = value
 
-                # Update model when all layers have at least BATCH_SIZE gradient updates
                 if ready_to_update(weight_dict):
-                    print(
-                        f"Received {BATCH_SIZE} gradients, updating model...")
-                    model.update(gradient_dict)
-                    print(f"model updated")
+                    print("Rewriting model weights...")
+                    model.replace_weights(weight_dict)
+                    print("Model weights updated!")
 
                     # Reset gradient dictionary
-                    gradient_dict = defaultdict(list)
+                    weight_dict = defaultdict(None)
 
                     # Push model back onto pipe
                     conn.send(model)
@@ -88,4 +86,4 @@ def run_model_consumer(conn: Pipe, consumer_group_name: str) -> None:
         pass
 
     finally:
-        c.close()
+        consumer.close()

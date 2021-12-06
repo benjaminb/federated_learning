@@ -1,10 +1,23 @@
 import multiprocessing
-from produce_grads import simulate_producer
+from multiprocessing import Process, Pipe
+from produce_grads import run_grad_producer
+from consume_models import run_model_consumer
 
 if __name__ == '__main__':
-    ctx = multiprocessing.get_context('spawn')
-    produce_proc = ctx.Process(target=simulate_producer,
-                               args=('text_sources/treasureisland.txt', ))
+    multiprocessing.set_start_method('spawn')
+    consumer_pipe, producer_pipe = Pipe()
 
-    produce_proc.start()
-    produce_proc.join()
+    producer_proc = Process(target=run_grad_producer,
+                            args=(
+                                producer_pipe,
+                                'text_sources/treasureisland.txt',
+                            ))
+
+    consumer_proc = Process(target=run_model_consumer,
+                            args=(consumer_pipe, 'treasureisland-consumer-gp'))
+
+    consumer_proc.start()
+    producer_proc.start()
+
+    producer_proc.join()
+    consumer_proc.join()
