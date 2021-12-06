@@ -1,3 +1,4 @@
+import time
 import torch
 from transformers import BertTokenizerFast
 from typing import DefaultDict, List
@@ -11,7 +12,8 @@ class LSTM(torch.nn.Module):
         self.tokenizer = BertTokenizerFast.from_pretrained(
             'bert-base-uncased') if tokenizer is None else tokenizer
         self.vocab_size = self.tokenizer.vocab_size
-
+        self.updated = False
+        self.last_updated = time.time()
         # Define layers
         self.embedding = torch.nn.Embedding(self.vocab_size, self.hidden_size)
         self.lstm = torch.nn.LSTM(input_size=self.hidden_size,
@@ -54,3 +56,6 @@ class LSTM(torch.nn.Module):
                 batch_gradient = torch.mean(torch.stack(grad_list), dim=0)
                 weights = rgetattr(self, layer)
                 weights -= lr * batch_gradient
+
+        self.updated = True
+        self.last_updated = time.time()

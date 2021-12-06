@@ -1,9 +1,7 @@
-import numpy as np
 import pickle
 import torch
 from confluent_kafka import Producer
 from confluent_kafka.serialization import StringSerializer
-from transformers import BertTokenizerFast
 
 from constants import HIDDEN_SIZE
 from lstm_model import LSTM
@@ -67,6 +65,7 @@ def simulate_producer(path_to_text: str):
             SEND UPDATES TO KAFKA
             """
             for key, grad in named_params:
+                # TODO: keys don't change so store them in a table
                 ser_key = serialize_str(key, ctx=None)
                 value = pickle.dumps(grad.data)
                 # Do the produce call

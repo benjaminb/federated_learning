@@ -43,10 +43,10 @@ def run_model_producer(conn: Pipe) -> None:
                 ser_key = serialize_str(key, ctx=None)
                 value = pickle.dumps(grad.data)
 
-                p.produce(topic='update-model-test',
-                          key=ser_key,
-                          value=value,
-                          callback=None)
+                producer.produce(topic='update-model-test',
+                                 key=ser_key,
+                                 value=value,
+                                 callback=None)
 
                 model.updated = False
 
