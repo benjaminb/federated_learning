@@ -1,5 +1,7 @@
 import torch
 from transformers import BertTokenizerFast
+from typing import DefaultDict, List
+from helpers import rgetattr
 
 
 class LSTM(torch.nn.Module):
@@ -41,3 +43,14 @@ class LSTM(torch.nn.Module):
         # Linear
         x = self.linear(x)
         return x.view(1, -1)  #[1, vocab_size]
+
+    def update(self,
+               grad_dict: DefaultDict[str, List[torch.tensor]],
+               lr=0.0005) -> None:
+        '''Updates the weights of the model'''
+        with torch.no_grad():
+            for layer, grad_list in grad_dict.items():
+                # Average the grad
+                batch_gradient = torch.mean(torch.stack(grad_list), dim=0)
+                weights = rgetattr(self, layer)
+                weights -= lr * batch_gradient

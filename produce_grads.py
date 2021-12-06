@@ -13,9 +13,9 @@ def ack(err, msg):
     """@err: error thrown by producer
         @msg: the kafka message object"""
     if err:
-        print(f"Failed to deliver message: {msg.value()}\n{err.str()}")
+        print(f"Failed to deliver message: {msg.key()}\n{err.str()}")
     else:
-        print(f"Message produced, length: {len(msg.value())}")
+        print(f"Message produced")
 
 
 #TODO: Get the tokenizer from the model instance instead?
@@ -32,7 +32,7 @@ model_config = {'hidden_size': 50, 'tokenizer': None}
 text_gen_config = {'path_to_text': 'text_sources/treasureisland.txt'}
 producer_config = {
     'bootstrap.servers': 'localhost:9092',
-    'message.max.bytes': 104857600,
+    'message.max.bytes': 15000000
 }
 
 # Set up model
@@ -53,7 +53,7 @@ keys = model.state_dict().keys()
 named_params = list(model.named_parameters())
 
 try:
-    for val in range(2):
+    for val in range(4):
         # Get a prompt
         prompt, label = text_gen.generate_sample()
         target = label_to_tensor(label)
@@ -64,13 +64,12 @@ try:
         loss.backward()
         for key, grad in named_params:
             pickled = pickle.dumps(grad.data)
-            print(f"Pickled {type(grad.data)} under key {key}")
+            print(f"Pickled {len(pickled)} bytes for {key}")
             # Do the produce call
-            p.produce(
-                topic='grads-test',
-                key=serialize_str(key, ctx=None),  #TODO: try b'keystring'
-                value=pickled,
-                callback=ack)
+            p.produce(topic='update-test',
+                      key=serialize_str(key, ctx=None),
+                      value=pickled,
+                      callback=ack)
 
             p.poll(0.5)
 except KeyboardInterrupt:
