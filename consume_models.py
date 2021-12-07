@@ -5,8 +5,13 @@ from collections import defaultdict
 from confluent_kafka import Consumer, KafkaError
 from confluent_kafka.serialization import StringDeserializer
 from typing import DefaultDict, List
-from lstm_model import LSTM
+
 from constants import BATCH_SIZE
+from lstm_model import LSTM
+from helpers import pprinter
+
+PROGRAM_NAME = 'consume_models.py'
+printer = pprinter(PROGRAM_NAME)
 
 
 def run_model_consumer(conn: Pipe, consumer_group_name: str) -> None:
@@ -29,7 +34,7 @@ def run_model_consumer(conn: Pipe, consumer_group_name: str) -> None:
     # Instantiate a model & send to model producer to distribute
     model = LSTM(**model_config)
     conn.send(model)
-    print(f"Initial model created, sending to model producer...")
+    printer(f"Initial model created, sending to model producer...")
 
     # Get the model layer names
     layer_names = [p[0] for p in model.named_parameters()]
@@ -49,7 +54,7 @@ def run_model_consumer(conn: Pipe, consumer_group_name: str) -> None:
     try:
         weight_dict = defaultdict(None)
 
-        print("Model consumer started...")
+        printer("Model consumer started...")
         while True:
             msg = consumer.poll(2)
 
@@ -60,28 +65,30 @@ def run_model_consumer(conn: Pipe, consumer_group_name: str) -> None:
             # Case: messages received and no error
             if not msg.error():
                 key = deserialize_str(msg.key(), None)
+                printer(f"Received message with key: {key}")
                 value = pickle.loads(msg.value())
                 weight_dict[key] = value
 
                 if ready_to_update(weight_dict):
-                    print("Rewriting model weights...")
+                    printer("Rewriting model weights...")
                     model.replace_weights(weight_dict)
-                    print("Model weights updated!")
+                    printer("Model weights updated.")
 
                     # Reset gradient dictionary
                     weight_dict = defaultdict(None)
 
                     # Push model back onto pipe
+                    printer("Sending new model to grad producer...")
                     conn.send(model)
 
             # Case: KafkaError that we reached EOF for this partition
             elif msg.error().code() == KafkaError._PARTITION_EOF:
-                print(
+                printer(
                     f"End of partition reached (topic/partition): {msg.topic()}/{msg.partition()}"
                 )
             # Case: some other error
             else:
-                print(f"Error occured: {msg.error().str()}")
+                printer(f"Error occured: {msg.error().str()}")
     except KeyboardInterrupt:
         pass
 

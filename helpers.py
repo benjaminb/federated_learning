@@ -1,4 +1,15 @@
 import functools
+import time
+
+
+def pprinter(program_name: str):
+    """
+    Binds @program_name to print statement for cleaner print statements
+    """
+    def printer(text):
+        print(f'[{program_name:19} | {time.strftime("%I:%M:%S%p")}]: {text}')
+
+    return printer
 
 
 # TODO: is *args necessary?

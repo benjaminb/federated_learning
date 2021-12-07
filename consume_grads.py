@@ -5,8 +5,14 @@ from collections import defaultdict
 from confluent_kafka import Consumer, KafkaError
 from confluent_kafka.serialization import StringDeserializer
 from typing import DefaultDict, List
-from lstm_model import LSTM
+
 from constants import BATCH_SIZE
+from helpers import pprinter
+from lstm_model import LSTM
+
+PROGRAM_NAME = 'consume_grads.py'
+
+printer = pprinter(PROGRAM_NAME)
 
 
 def run_grad_consumer(conn: Pipe) -> None:
@@ -29,7 +35,7 @@ def run_grad_consumer(conn: Pipe) -> None:
     # Instantiate a model & send to model producer to distribute
     model = LSTM(**model_config)
     conn.send(model)
-    print(f"Initial model created, sending to model producer...")
+    printer("Initial model created, sending to model producer...")
 
     # Get the model layer names
     layer_names = [p[0] for p in model.named_parameters()]
@@ -55,7 +61,7 @@ def run_grad_consumer(conn: Pipe) -> None:
     try:
         gradient_dict = defaultdict(list)
 
-        print("Consumer started...")
+        printer("Consumer started...")
         while True:
             msg = c.poll(1)
 
@@ -71,10 +77,10 @@ def run_grad_consumer(conn: Pipe) -> None:
 
                 # Update model when all layers have at least BATCH_SIZE gradient updates
                 if ready_to_update(gradient_dict):
-                    print(
+                    printer(
                         f"Received {BATCH_SIZE} gradients, updating model...")
                     model.update(gradient_dict)
-                    print(f"model updated")
+                    printer(f"model updated")
 
                     # Reset gradient dictionary
                     gradient_dict = defaultdict(list)
@@ -84,12 +90,12 @@ def run_grad_consumer(conn: Pipe) -> None:
 
             # Case: KafkaError that we reached EOF for this partition
             elif msg.error().code() == KafkaError._PARTITION_EOF:
-                print(
+                printer(
                     f"End of partition reached (topic/partition): {msg.topic()}/{msg.partition()}"
                 )
             # Case: some other error
             else:
-                print(f"Error occured: {msg.error().str()}")
+                printer(f"Error occured: {msg.error().str()}")
     except KeyboardInterrupt:
         pass
 

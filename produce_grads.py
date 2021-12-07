@@ -5,9 +5,13 @@ import torch
 from confluent_kafka import Producer
 from confluent_kafka.serialization import StringSerializer
 
-from constants import HIDDEN_SIZE
+from constants import HIDDEN_SIZE, CREATE_SAMPLE_INTERVAL
 from lstm_model import LSTM
 from text_generator import TextGenerator
+from helpers import pprinter
+
+PROGRAM_NAME = 'produce_grads.py'
+printer = pprinter(PROGRAM_NAME)
 
 
 def run_grad_producer(conn: Pipe, path_to_text: str):
@@ -16,15 +20,12 @@ def run_grad_producer(conn: Pipe, path_to_text: str):
         """@err: error thrown by producer
             @msg: the kafka message object"""
         if err:
-            print(f"Failed to deliver message: {msg.key()}\n{err.str()}")
+            printer(f"Failed to deliver message: {msg.key()}\n{err.str()}")
         else:
-            # print(
+            # printer(
             #     f"Gradient message produced: {msg.key()}: {len(msg.value()):,} bytes"
             # )
             pass
-
-    #TODO: Get the tokenizer from the model instance instead?
-    # tokenizer = BertTokenizerFast.from_pretrained('bert-base-uncased')
 
     def label_to_tensor(text: str) -> torch.LongTensor:
         text_ids = tokenizer.convert_tokens_to_ids(text)
@@ -54,15 +55,15 @@ def run_grad_producer(conn: Pipe, path_to_text: str):
     named_params = list(model.named_parameters())
 
     try:
-        # Make this run for max 1 min
-        start = time.time()
-        while time.time() < start + 60:
+        while True:
             # Check if there's a new model
-            if conn.poll(2):
+            if conn.poll():
                 model = conn.recv()
+                printer("New model received")
             """
             SIMULATE USAGE
             """
+            time.sleep(CREATE_SAMPLE_INTERVAL)
             # Get a prompt
             prompt, label = text_gen.generate_sample()
             target = label_to_tensor(label)

@@ -3,7 +3,11 @@ import pickle
 import torch
 from confluent_kafka import Producer
 from confluent_kafka.serialization import StringSerializer
-# from lstm_model import LSTM
+
+from helpers import pprinter
+
+PROGRAM_NAME = "produce_models.py"
+printer = pprinter(PROGRAM_NAME)
 
 
 def run_model_producer(conn: Pipe) -> None:
@@ -11,13 +15,13 @@ def run_model_producer(conn: Pipe) -> None:
         """@err: error thrown by producer
             @msg: the kafka message object"""
         if err:
-            print(f"Failed to deliver message: {msg.key()}\n{err.str()}")
+            printer(f"Failed to deliver message: {msg.key()}\n{err.str()}")
         else:
-            print(
+            printer(
                 f"Model layer weight update message produced: {msg.key()}: {len(msg.value()):,} bytes"
             )
 
-    print("Model producer starting...")
+    printer("Model producer starting...")
 
     producer_config = {
         'bootstrap.servers': 'localhost:9092',
@@ -28,9 +32,9 @@ def run_model_producer(conn: Pipe) -> None:
     serialize_str = StringSerializer()
 
     # Wait for consume_grads to send over initial model
-    print("Model producer is waiting for initial model...")
+    printer("Model producer is waiting for initial model...")
     _ = conn.poll(timeout=None)
-    print("Model producer received initial model.")
+    printer("Model producer received initial model.")
 
     try:
         while True:
@@ -42,14 +46,15 @@ def run_model_producer(conn: Pipe) -> None:
 
             # Get the model from the pipe
             model = conn.recv()
-            print("Model producer received an update...")
-            print(f"model.updated={model.updated}")
+            printer("Model producer received an updated model...")
+
             # Confirm model has been updated
             if not model.updated:
                 continue
             """
             SEND UPDATED MODEL
             """
+            printer("Sending model updates to broker...")
             for key, grad in model.named_parameters():
                 ser_key = serialize_str(key, ctx=None)
                 value = pickle.dumps(grad.data)
@@ -64,4 +69,4 @@ def run_model_producer(conn: Pipe) -> None:
     except KeyboardInterrupt:
         pass
 
-    p.flush(30)
+    producer.flush(30)
