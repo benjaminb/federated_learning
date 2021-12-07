@@ -65,12 +65,11 @@ def run_model_consumer(conn: Pipe, consumer_group_name: str) -> None:
             # Case: messages received and no error
             if not msg.error():
                 key = deserialize_str(msg.key(), None)
-                printer(f"Received message with key: {key}")
                 value = pickle.loads(msg.value())
                 weight_dict[key] = value
 
                 if ready_to_update(weight_dict):
-                    printer("Rewriting model weights...")
+                    printer("Ready to update model, rewriting weights...")
                     model.replace_weights(weight_dict)
                     printer("Model weights updated.")
 

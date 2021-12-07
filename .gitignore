@@ -4,6 +4,7 @@
 *.pkl
 test.py
 test_gen.py
+prompts.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

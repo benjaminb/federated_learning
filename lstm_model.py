@@ -68,3 +68,9 @@ class LSTM(torch.nn.Module):
             for layer, new_weights in weight_dict.items():
                 parameter = rgetattr(self, layer)
                 parameter.data = new_weights
+
+    def decode_logits(self, inp) -> str:
+        """
+        Decodes input tensor from a logits prediction
+        """
+        return self.tokenizer.decode(torch.argmax(inp))

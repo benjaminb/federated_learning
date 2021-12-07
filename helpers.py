@@ -8,7 +8,7 @@ def pprinter(program_name: str):
     """
     def printer(text):
         print(
-            f'[{program_name:19} | {datetime.utcnow().strftime("%I:%M:%S.%f")}]: {text}'
+            f'[{program_name:18} |{datetime.utcnow().strftime("%I:%M:%S.%f")}]: {text}'
         )
 
     return printer

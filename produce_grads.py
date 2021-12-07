@@ -54,6 +54,10 @@ def run_grad_producer(conn: Pipe, path_to_text: str):
     # Get references to the gradient tensors
     named_params = list(model.named_parameters())
 
+    # Start log file for prompts
+    with open('prompts.txt', 'w') as f:
+        f.write('TEXT\tPROMPT\tLABEL\tPREDICTION\n')
+
     try:
         while True:
             # Check if there's a new model
@@ -72,6 +76,11 @@ def run_grad_producer(conn: Pipe, path_to_text: str):
             logits = model(prompt)
             loss = loss_fn(logits, target)
             loss.backward()
+
+            pred = model.decode_logits(logits)
+            # Log the results
+            with open('prompts.txt', 'a+') as f:
+                f.write(f'{path_to_text}\t{prompt}\t{label}\t{pred}\n')
             """
             SEND UPDATES TO KAFKA
             """
