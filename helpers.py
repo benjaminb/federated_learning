@@ -1,5 +1,5 @@
 import functools
-import time
+from datetime import datetime
 
 
 def pprinter(program_name: str):
@@ -7,7 +7,9 @@ def pprinter(program_name: str):
     Binds @program_name to print statement for cleaner print statements
     """
     def printer(text):
-        print(f'[{program_name:19} | {time.strftime("%I:%M:%S%p")}]: {text}')
+        print(
+            f'[{program_name:19} | {datetime.utcnow().strftime("%I:%M:%S.%f")}]: {text}'
+        )
 
     return printer
 
