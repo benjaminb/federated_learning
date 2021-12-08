@@ -11,7 +11,7 @@ PATH_TO_DATA = 'text_sources/'
 PROMPT_LOG_FILENAME = 'prompts.txt'
 
 # produce_grads.py: log every nth prompt/target/prediction
-PROMPT_LOG_INTERVAL = 10
+PROMPT_LOG_INTERVAL = 50
 
 # lstm_model.py: hidden dimension of LSTM layer
 # also used in consume_models.py, produce_grads.py

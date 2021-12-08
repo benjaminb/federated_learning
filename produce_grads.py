@@ -65,8 +65,8 @@ def run_grad_producer(conn: Pipe, text_source: str):
         f.write('TEXT\tPROMPT\tLABEL\tPREDICTION\n')
 
     prompt_log_counter = 0
-    try:
-        while True:
+    while True:
+        try:
             # Check if there's a new model
             if conn.poll():
                 model = conn.recv()
@@ -93,7 +93,7 @@ def run_grad_producer(conn: Pipe, text_source: str):
                               prompt=prompt,
                               label=label,
                               pred=pred)
-                printer("Wrote to prompot log file...")
+                printer("Wrote to prompt log file...")
                 prompt_log_counter = 0
             """
             SEND UPDATES TO KAFKA
@@ -109,12 +109,20 @@ def run_grad_producer(conn: Pipe, text_source: str):
                           callback=ack)
 
                 p.poll(0)
-    except BufferError:
-        printer(
-            f"BufferError encountered. Blocking for {WAIT_TIME_ON_BUFFER_ERROR} seconds..."
-        )
-        time.sleep(WAIT_TIME_ON_BUFFER_ERROR)
-    except KeyboardInterrupt:
-        pass
+        except BufferError:
+            # printer(
+            #     f"BufferError encountered. Blocking for {WAIT_TIME_ON_BUFFER_ERROR} seconds..."
+            # )
+            printer("BufferError encountered. Waiting for buffer to clear...")
+
+            while p.flush(0) > 1:
+                printer(f"Messages in queue: {p.flush(0)}")
+                time.sleep(WAIT_TIME_ON_BUFFER_ERROR)
+
+            printer("outside while loop")
+            # continue
+
+        except KeyboardInterrupt:
+            pass
 
     p.flush(30)
