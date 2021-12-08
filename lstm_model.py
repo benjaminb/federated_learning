@@ -48,7 +48,7 @@ class LSTM(torch.nn.Module):
 
     def update(self,
                grad_dict: DefaultDict[str, List[torch.tensor]],
-               lr=0.0005) -> None:
+               lr=0.01) -> None:
         '''Updates the weights of the model'''
         with torch.no_grad():
             for layer, grad_list in grad_dict.items():

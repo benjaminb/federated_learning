@@ -1,20 +1,21 @@
 from multiprocessing import Pipe
+import os
 import pickle
 import time
 import torch
 from confluent_kafka import Producer
 from confluent_kafka.serialization import StringSerializer
 
-from constants import HIDDEN_SIZE, CREATE_SAMPLE_INTERVAL
+from constants import HIDDEN_SIZE, CREATE_SAMPLE_INTERVAL, PROMPT_LOG_INTERVAL, WAIT_TIME_ON_BUFFER_ERROR, PATH_TO_DATA
 from lstm_model import LSTM
 from text_generator import TextGenerator
-from helpers import pprinter
+from helpers import pprinter, append_to_tsv
 
 PROGRAM_NAME = 'produce_grads.py'
 printer = pprinter(PROGRAM_NAME)
 
 
-def run_grad_producer(conn: Pipe, path_to_text: str):
+def run_grad_producer(conn: Pipe, text_source: str):
     # Acknowledgement callback
     def ack(err, msg):
         """@err: error thrown by producer
@@ -26,6 +27,11 @@ def run_grad_producer(conn: Pipe, path_to_text: str):
             #     f"Gradient message produced: {msg.key()}: {len(msg.value()):,} bytes"
             # )
             pass
+
+    # Resolve path to text source
+    path_to_text = os.path.join(PATH_TO_DATA, text_source)
+    assert os.path.exists(
+        path_to_text), f"PROBLEM: {path_to_text} does not exist"
 
     def label_to_tensor(text: str) -> torch.LongTensor:
         text_ids = tokenizer.convert_tokens_to_ids(text)
@@ -58,6 +64,7 @@ def run_grad_producer(conn: Pipe, path_to_text: str):
     with open('prompts.txt', 'w') as f:
         f.write('TEXT\tPROMPT\tLABEL\tPREDICTION\n')
 
+    prompt_log_counter = 0
     try:
         while True:
             # Check if there's a new model
@@ -77,10 +84,17 @@ def run_grad_producer(conn: Pipe, path_to_text: str):
             loss = loss_fn(logits, target)
             loss.backward()
 
-            pred = model.decode_logits(logits)
-            # Log the results
-            with open('prompts.txt', 'a+') as f:
-                f.write(f'{path_to_text}\t{prompt}\t{label}\t{pred}\n')
+            prompt_log_counter += 1
+
+            # Log the results according to the interval constant
+            if prompt_log_counter == PROMPT_LOG_INTERVAL:
+                pred = model.decode_logits(logits)
+                append_to_tsv(text_source=text_source,
+                              prompt=prompt,
+                              label=label,
+                              pred=pred)
+                printer("Wrote to prompot log file...")
+                prompt_log_counter = 0
             """
             SEND UPDATES TO KAFKA
             """
@@ -94,7 +108,12 @@ def run_grad_producer(conn: Pipe, path_to_text: str):
                           value=value,
                           callback=ack)
 
-                p.poll(0.5)
+                p.poll(0)
+    except BufferError:
+        printer(
+            f"BufferError encountered. Blocking for {WAIT_TIME_ON_BUFFER_ERROR} seconds..."
+        )
+        time.sleep(WAIT_TIME_ON_BUFFER_ERROR)
     except KeyboardInterrupt:
         pass
 

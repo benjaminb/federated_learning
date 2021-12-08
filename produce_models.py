@@ -4,6 +4,7 @@ import torch
 from confluent_kafka import Producer
 from confluent_kafka.serialization import StringSerializer
 
+from constants import WAIT_TIME_ON_BUFFER_ERROR
 from helpers import pprinter
 
 PROGRAM_NAME = "produce_models.py"
@@ -17,9 +18,10 @@ def run_model_producer(conn: Pipe) -> None:
         if err:
             printer(f"Failed to deliver message: {msg.key()}\n{err.str()}")
         else:
-            printer(
-                f"Model layer weight update message produced: {msg.key()}: {len(msg.value()):,} bytes"
-            )
+            # printer(
+            #     f"Model layer weight update message produced: {msg.key()}: {len(msg.value()):,} bytes"
+            # )
+            pass
 
     printer("Model producer starting...")
 
@@ -49,8 +51,8 @@ def run_model_producer(conn: Pipe) -> None:
             printer("Model producer received an updated model...")
 
             # Confirm model has been updated
-            if not model.updated:
-                continue
+            # if not model.updated:
+            #     continue
             """
             SEND UPDATED MODEL
             """
@@ -63,9 +65,13 @@ def run_model_producer(conn: Pipe) -> None:
                                  key=ser_key,
                                  value=value,
                                  callback=ack)
-
+                producer.poll(0)  # Trigger queue cleaning
                 model.updated = False
-
+    except BufferError:
+        printer(
+            f"BufferError encountered. Blocking for {WAIT_TIME_ON_BUFFER_ERROR} seconds..."
+        )
+        time.sleep(WAIT_TIME_ON_BUFFER_ERROR)
     except KeyboardInterrupt:
         pass
 

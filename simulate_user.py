@@ -10,7 +10,7 @@ if __name__ == '__main__':
     producer_proc = Process(target=run_grad_producer,
                             args=(
                                 producer_pipe,
-                                'text_sources/treasureisland.txt',
+                                'treasureisland.txt',
                             ))
 
     consumer_proc = Process(target=run_model_consumer,
