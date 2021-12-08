@@ -5,7 +5,8 @@ from produce_grads import run_grad_producer
 from consume_models import run_model_consumer
 from constants import PATH_TO_DATA, TEXT_SOURCES
 
-if __name__ == '__main__':
+
+def main():
     multiprocessing.set_start_method('spawn')
 
     text_sources = TEXT_SOURCES if TEXT_SOURCES else os.listdir(PATH_TO_DATA)
@@ -24,6 +25,14 @@ if __name__ == '__main__':
         consumer.start()
         producer.start()
 
+    # Start log file for prompts
+    with open('prompts.txt', 'w') as f:
+        f.write('TEXT\tPROMPT\tLABEL\tPREDICTION\n')
+
     for producer, consumer in zip(producers, consumers):
         producer.join()
         consumer.join()
+
+
+if __name__ == '__main__':
+    main()

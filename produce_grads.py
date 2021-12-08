@@ -6,7 +6,7 @@ import torch
 from confluent_kafka import Producer
 from confluent_kafka.serialization import StringSerializer
 
-from constants import HIDDEN_SIZE, CREATE_SAMPLE_INTERVAL, PROMPT_LOG_INTERVAL, WAIT_TIME_ON_BUFFER_ERROR, PATH_TO_DATA
+from constants import HIDDEN_SIZE, CREATE_SAMPLE_INTERVAL, GRAD_TOPIC_NAME, PROMPT_LOG_INTERVAL, WAIT_TIME_ON_BUFFER_ERROR, PATH_TO_DATA
 from lstm_model import LSTM
 from text_generator import TextGenerator
 from helpers import pprinter, append_to_tsv, buffer_too_full
@@ -61,10 +61,6 @@ def run_grad_producer(conn: Pipe, text_source: str):
     # Get references to the gradient tensors
     named_params = list(model.named_parameters())
 
-    # Start log file for prompts
-    with open('prompts.txt', 'w') as f:
-        f.write('TEXT\tPROMPT\tLABEL\tPREDICTION\n')
-
     prompt_log_counter = 0
     while True:
         try:
@@ -104,7 +100,7 @@ def run_grad_producer(conn: Pipe, text_source: str):
                 ser_key = serialize_str(key, ctx=None)
                 value = pickle.dumps(grad.data)
                 # Do the produce call
-                p.produce(topic='update-test',
+                p.produce(topic=GRAD_TOPIC_NAME,
                           key=ser_key,
                           value=value,
                           callback=ack)
@@ -116,6 +112,7 @@ def run_grad_producer(conn: Pipe, text_source: str):
                 printer(f"Messages in queue: {p.flush(0)}")
                 time.sleep(WAIT_TIME_ON_BUFFER_ERROR)
         except KeyboardInterrupt:
-            pass
+            p.flush(30)
+            return
 
-    p.flush(30)
+    # p.flush(30)

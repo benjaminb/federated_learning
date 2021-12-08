@@ -17,6 +17,10 @@ PROMPT_LOG_INTERVAL = 50
 # If blank, simulate_users.py will use all .txt files found in PATH_TO_DATA
 TEXT_SOURCES = []
 
+# Name of topic (each different model architecture should have a different topic)
+GRAD_TOPIC_NAME = 'lstm-grads'
+MODEL_TOPIC_NAME = 'lstm-models'
+
 # lstm_model.py: hidden dimension of LSTM layer
 # also used in consume_models.py, produce_grads.py
 HIDDEN_SIZE = 50

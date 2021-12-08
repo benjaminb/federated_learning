@@ -4,7 +4,7 @@ import torch
 from confluent_kafka import Producer
 from confluent_kafka.serialization import StringSerializer
 
-from constants import WAIT_TIME_ON_BUFFER_ERROR
+from constants import WAIT_TIME_ON_BUFFER_ERROR, MODEL_TOPIC_NAME
 from helpers import pprinter, buffer_too_full
 
 PROGRAM_NAME = "produce_models.py"
@@ -61,7 +61,7 @@ def run_model_producer(conn: Pipe) -> None:
                 ser_key = serialize_str(key, ctx=None)
                 value = pickle.dumps(grad.data)
 
-                producer.produce(topic='update-model-test',
+                producer.produce(topic=MODEL_TOPIC_NAME,
                                  key=ser_key,
                                  value=value,
                                  callback=ack)
@@ -73,6 +73,7 @@ def run_model_producer(conn: Pipe) -> None:
                 printer(f"Messages in queue: {p.flush(0)}")
                 time.sleep(WAIT_TIME_ON_BUFFER_ERROR)
         except KeyboardInterrupt:
-            pass
+            producer.flush(30)
+            return
 
     producer.flush(30)

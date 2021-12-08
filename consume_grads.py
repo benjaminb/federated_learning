@@ -6,7 +6,7 @@ from confluent_kafka import Consumer, KafkaError
 from confluent_kafka.serialization import StringDeserializer
 from typing import DefaultDict, List
 
-from constants import BATCH_SIZE
+from constants import BATCH_SIZE, GRAD_TOPIC_NAME, HIDDEN_SIZE
 from helpers import pprinter
 from lstm_model import LSTM
 
@@ -30,7 +30,7 @@ def run_grad_consumer(conn: Pipe) -> None:
         },
         'fetch.message.max.bytes': 15000000
     }
-    model_config = {'hidden_size': 50, 'tokenizer': None}
+    model_config = {'hidden_size': HIDDEN_SIZE, 'tokenizer': None}
 
     # Instantiate a model & send to model producer to distribute
     model = LSTM(**model_config)
@@ -46,7 +46,7 @@ def run_grad_consumer(conn: Pipe) -> None:
 
     # Tell this consumer which topics to subscribe to
     # NOTE: subsequent calls will OVERWRITE previous subscriptions!
-    c.subscribe(['update-test'])
+    c.subscribe([GRAD_TOPIC_NAME])
     """
     HELPER FUNCTIONS
     """
@@ -97,7 +97,8 @@ def run_grad_consumer(conn: Pipe) -> None:
             else:
                 printer(f"Error occured: {msg.error().str()}")
     except KeyboardInterrupt:
-        pass
+        c.close()
+        return
 
     finally:
         c.close()

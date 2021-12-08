@@ -6,7 +6,7 @@ from confluent_kafka import Consumer, KafkaError
 from confluent_kafka.serialization import StringDeserializer
 from typing import DefaultDict, List
 
-from constants import BATCH_SIZE
+from constants import MODEL_TOPIC_NAME
 from lstm_model import LSTM
 from helpers import pprinter
 
@@ -43,7 +43,7 @@ def run_model_consumer(conn: Pipe, consumer_group_name: str) -> None:
     consumer = Consumer(settings)
     deserialize_str = StringDeserializer()
 
-    consumer.subscribe(['update-model-test'])
+    consumer.subscribe([MODEL_TOPIC_NAME])
 
     def ready_to_update(weight_dict: DefaultDict[str, torch.tensor]) -> bool:
         """
@@ -89,7 +89,8 @@ def run_model_consumer(conn: Pipe, consumer_group_name: str) -> None:
             else:
                 printer(f"Error occured: {msg.error().str()}")
     except KeyboardInterrupt:
-        pass
+        consumer.close()
+        return
 
     finally:
         consumer.close()
