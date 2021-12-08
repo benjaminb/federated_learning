@@ -115,4 +115,4 @@ def run_grad_producer(conn: Pipe, text_source: str):
             p.flush(30)
             return
 
-    # p.flush(30)
+    p.flush(30)

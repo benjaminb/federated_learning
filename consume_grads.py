@@ -6,7 +6,7 @@ from confluent_kafka import Consumer, KafkaError
 from confluent_kafka.serialization import StringDeserializer
 from typing import DefaultDict, List
 
-from constants import BATCH_SIZE, GRAD_TOPIC_NAME, HIDDEN_SIZE
+from constants import BATCH_SIZE, GRAD_TOPIC_NAME, HIDDEN_SIZE, STEPS_FOR_NEW_MODEL
 from helpers import pprinter
 from lstm_model import LSTM
 
@@ -80,13 +80,15 @@ def run_grad_consumer(conn: Pipe) -> None:
                     printer(
                         f"Received {BATCH_SIZE} gradients, updating model...")
                     model.update(gradient_dict)
+                    model.step_counter += 1
                     printer(f"model updated")
 
                     # Reset gradient dictionary
                     gradient_dict = defaultdict(list)
 
                     # Push model back onto pipe
-                    conn.send(model)
+                    if model.step_counter >= STEPS_FOR_NEW_MODEL:
+                        conn.send(model)
 
             # Case: KafkaError that we reached EOF for this partition
             elif msg.error().code() == KafkaError._PARTITION_EOF:

@@ -13,7 +13,8 @@ class LSTM(torch.nn.Module):
             'bert-base-uncased') if tokenizer is None else tokenizer
         self.vocab_size = self.tokenizer.vocab_size
         self.updated = False
-        self.last_updated = time.time()
+        self.step_counter = 0
+
         # Define layers
         self.embedding = torch.nn.Embedding(self.vocab_size, self.hidden_size)
         self.lstm = torch.nn.LSTM(input_size=self.hidden_size,
