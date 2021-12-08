@@ -5,7 +5,7 @@ from confluent_kafka import Producer
 from confluent_kafka.serialization import StringSerializer
 
 from constants import WAIT_TIME_ON_BUFFER_ERROR
-from helpers import pprinter
+from helpers import pprinter, buffer_too_full
 
 PROGRAM_NAME = "produce_models.py"
 printer = pprinter(PROGRAM_NAME)
@@ -38,8 +38,8 @@ def run_model_producer(conn: Pipe) -> None:
     _ = conn.poll(timeout=None)
     printer("Model producer received initial model.")
 
-    try:
-        while True:
+    while True:
+        try:
             """
             WAIT FOR MESSAGE
             """
@@ -67,12 +67,12 @@ def run_model_producer(conn: Pipe) -> None:
                                  callback=ack)
                 producer.poll(0)  # Trigger queue cleaning
                 model.updated = False
-    except BufferError:
-        printer(
-            f"BufferError encountered. Blocking for {WAIT_TIME_ON_BUFFER_ERROR} seconds..."
-        )
-        time.sleep(WAIT_TIME_ON_BUFFER_ERROR)
-    except KeyboardInterrupt:
-        pass
+        except BufferError:
+            printer("BufferError encountered. Waiting for buffer to clear...")
+            while buffer_too_full(producer=p):
+                printer(f"Messages in queue: {p.flush(0)}")
+                time.sleep(WAIT_TIME_ON_BUFFER_ERROR)
+        except KeyboardInterrupt:
+            pass
 
     producer.flush(30)

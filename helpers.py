@@ -1,16 +1,30 @@
 import functools
+import time
+from confluent_kafka import Producer
 from datetime import datetime
 
 from constants import PROMPT_LOG_FILENAME
 
 
-def pprinter(program_name: str):
+def buffer_too_full(producer: Producer) -> bool:
+    """
+    Returns True if the producer's buffer is full according to our policy
+    """
+    return producer.flush(0) > 1
+
+
+def pprinter(program_name: str, tag: str = None):
     """
     Binds @program_name to print statement for cleaner print statements
     """
+    first_col = 17
+    if tag:
+        program_name += f'/{tag}'
+        first_col += 17
+
     def printer(text):
         print(
-            f'[{program_name:18} |{datetime.utcnow().strftime("%I:%M:%S.%f")}]: {text}'
+            f'[{program_name:{first_col}} |{datetime.utcnow().strftime("%I:%M:%S.%f")}]:{text}'
         )
 
     return printer

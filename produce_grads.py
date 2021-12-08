@@ -9,10 +9,9 @@ from confluent_kafka.serialization import StringSerializer
 from constants import HIDDEN_SIZE, CREATE_SAMPLE_INTERVAL, PROMPT_LOG_INTERVAL, WAIT_TIME_ON_BUFFER_ERROR, PATH_TO_DATA
 from lstm_model import LSTM
 from text_generator import TextGenerator
-from helpers import pprinter, append_to_tsv
+from helpers import pprinter, append_to_tsv, buffer_too_full
 
 PROGRAM_NAME = 'produce_grads.py'
-printer = pprinter(PROGRAM_NAME)
 
 
 def run_grad_producer(conn: Pipe, text_source: str):
@@ -32,6 +31,8 @@ def run_grad_producer(conn: Pipe, text_source: str):
     path_to_text = os.path.join(PATH_TO_DATA, text_source)
     assert os.path.exists(
         path_to_text), f"PROBLEM: {path_to_text} does not exist"
+
+    printer = pprinter(PROGRAM_NAME, tag=text_source)
 
     def label_to_tensor(text: str) -> torch.LongTensor:
         text_ids = tokenizer.convert_tokens_to_ids(text)
@@ -110,18 +111,10 @@ def run_grad_producer(conn: Pipe, text_source: str):
 
                 p.poll(0)
         except BufferError:
-            # printer(
-            #     f"BufferError encountered. Blocking for {WAIT_TIME_ON_BUFFER_ERROR} seconds..."
-            # )
             printer("BufferError encountered. Waiting for buffer to clear...")
-
-            while p.flush(0) > 1:
+            while buffer_too_full(producer=p):
                 printer(f"Messages in queue: {p.flush(0)}")
                 time.sleep(WAIT_TIME_ON_BUFFER_ERROR)
-
-            printer("outside while loop")
-            # continue
-
         except KeyboardInterrupt:
             pass
 
