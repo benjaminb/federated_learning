@@ -13,9 +13,10 @@ def main():
     pipes = [Pipe() for _ in range(len(text_sources))]
     consumers, producers = [], []
 
-    for (c_pipe, p_pipe), text_source in zip(pipes, text_sources):
+    for i, ((c_pipe, p_pipe),
+            text_source) in enumerate(zip(pipes, text_sources)):
         producer = Process(target=run_grad_producer,
-                           args=(p_pipe, text_source))
+                           args=(p_pipe, text_source, i))
         consumer = Process(target=run_model_consumer,
                            args=(c_pipe, f'{text_source[:-4]}-consumer-gp'))
 

@@ -14,7 +14,7 @@ from helpers import pprinter, append_to_tsv, buffer_too_full
 PROGRAM_NAME = 'produce_grads.py'
 
 
-def run_grad_producer(conn: Pipe, text_source: str):
+def run_grad_producer(conn: Pipe, text_source: str, user_id: int):
     # Acknowledgement callback
     def ack(err, msg):
         """@err: error thrown by producer
@@ -32,7 +32,7 @@ def run_grad_producer(conn: Pipe, text_source: str):
     assert os.path.exists(
         path_to_text), f"PROBLEM: {path_to_text} does not exist"
 
-    printer = pprinter(PROGRAM_NAME, tag=text_source)
+    printer = pprinter("user", tag=str(user_id))
 
     # Configs
     model_config = {'hidden_size': HIDDEN_SIZE, 'tokenizer': None}
@@ -45,7 +45,6 @@ def run_grad_producer(conn: Pipe, text_source: str):
     # Set up model
     model = LSTM(**model_config)
     loss_fn = torch.nn.CrossEntropyLoss()
-    tokenizer = model.tokenizer
 
     # Set up sample text generator
     text_gen = TextGenerator(**text_gen_config)

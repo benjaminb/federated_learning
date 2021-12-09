@@ -20,7 +20,6 @@ def pprinter(program_name: str, tag: str = None):
     first_col = 17
     if tag:
         program_name += f'/{tag}'
-        first_col += 17
 
     def printer(text):
         print(
