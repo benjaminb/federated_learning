@@ -34,10 +34,6 @@ def run_grad_producer(conn: Pipe, text_source: str):
 
     printer = pprinter(PROGRAM_NAME, tag=text_source)
 
-    def label_to_tensor(text: str) -> torch.LongTensor:
-        text_ids = tokenizer.convert_tokens_to_ids(text)
-        return torch.LongTensor([text_ids])
-
     # Configs
     model_config = {'hidden_size': HIDDEN_SIZE, 'tokenizer': None}
     text_gen_config = {'path_to_text': path_to_text}
@@ -74,7 +70,7 @@ def run_grad_producer(conn: Pipe, text_source: str):
             time.sleep(CREATE_SAMPLE_INTERVAL)
             # Get a prompt
             prompt, label = text_gen.generate_sample()
-            target = label_to_tensor(label)
+            target = model.label_to_tensor(label)
 
             # Compute loss & get gradient
             logits = model(prompt)

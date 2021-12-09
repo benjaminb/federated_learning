@@ -75,3 +75,10 @@ class LSTM(torch.nn.Module):
         Decodes input tensor from a logits prediction
         """
         return self.tokenizer.decode(torch.argmax(inp))
+
+    def label_to_tensor(self, text: str) -> torch.LongTensor:
+        """
+        Converts text string to torch.LongTensor using tokenizer
+        """
+        text_ids = self.tokenizer.convert_tokens_to_ids(text)
+        return torch.LongTensor([text_ids])
