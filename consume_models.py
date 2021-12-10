@@ -6,7 +6,7 @@ from confluent_kafka import Consumer, KafkaError
 from confluent_kafka.serialization import StringDeserializer
 from typing import DefaultDict, List
 
-from constants import MODEL_TOPIC_NAME
+from constants import MODEL_TOPIC_NAME, USER_MODEL_FNAME_BASE
 from lstm_model import LSTM
 from helpers import pprinter
 
@@ -14,7 +14,8 @@ PROGRAM_NAME = 'consume_models.py'
 printer = pprinter(PROGRAM_NAME)
 
 
-def run_model_consumer(conn: Pipe, consumer_group_name: str) -> None:
+def run_model_consumer(conn: Pipe, consumer_group_name: str,
+                       user_id: int) -> None:
     print("Starting model consumer")
     settings = {
         'bootstrap.servers': 'kafka:9092',  # Gotta specify the kafka cluster
@@ -34,8 +35,10 @@ def run_model_consumer(conn: Pipe, consumer_group_name: str) -> None:
 
     # Instantiate a model & send to model producer to distribute
     model = LSTM(**model_config)
-    conn.send(model)
-    printer(f"Initial model created, sending to model producer...")
+    model_filename = f"{USER_MODEL_FNAME_BASE}_{user_id}.pkl"
+    pickle.dump(model, open(model_filename, 'wb'))
+    printer(f"Initial model created, sending to grad producer...")
+    conn.send(1)
 
     # Get the model layer names
     layer_names = [p[0] for p in model.named_parameters()]
@@ -79,7 +82,8 @@ def run_model_consumer(conn: Pipe, consumer_group_name: str) -> None:
 
                     # Push model back onto pipe
                     printer("Sending new model to grad producer...")
-                    conn.send(pickle.dumps(model))
+                    pickle.dump(model, open(model_filename, 'wb'))
+                    conn.send(1)
 
             # Case: KafkaError that we reached EOF for this partition
             elif msg.error().code() == KafkaError._PARTITION_EOF:

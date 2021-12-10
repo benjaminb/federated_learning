@@ -6,7 +6,7 @@ from confluent_kafka import Consumer, KafkaError
 from confluent_kafka.serialization import StringDeserializer
 from typing import DefaultDict, List
 
-from constants import BATCH_SIZE, GRAD_TOPIC_NAME, HIDDEN_SIZE, STEPS_FOR_NEW_MODEL
+from constants import BATCH_SIZE, GRAD_TOPIC_NAME, HIDDEN_SIZE, SERVER_MODEL_FILENAME, STEPS_FOR_NEW_MODEL
 from helpers import pprinter
 from lstm_model import LSTM
 
@@ -36,7 +36,8 @@ def run_grad_consumer(conn: Pipe) -> None:
 
     # Instantiate a model & send to model producer to distribute
     model = LSTM(**model_config)
-    conn.send(model)
+    pickle.dump(model, open(SERVER_MODEL_FILENAME, 'wb'))
+    conn.send(1)
     printer("Initial model created, sending to model producer...")
 
     # Get the model layer names
@@ -90,7 +91,8 @@ def run_grad_consumer(conn: Pipe) -> None:
 
                     # Push model back onto pipe
                     if model.step_counter >= STEPS_FOR_NEW_MODEL:
-                        conn.send(pickle.dumps(model))
+                        pickle.dump(model, open(SERVER_MODEL_FILENAME, 'wb'))
+                        conn.send(1)
 
             # Case: KafkaError that we reached EOF for this partition
             elif msg.error().code() == KafkaError._PARTITION_EOF:

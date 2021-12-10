@@ -4,6 +4,10 @@ BATCH_SIZE = 32
 # produce_grads.py: generate a prompt/prediction/loss every n seconds
 CREATE_SAMPLE_INTERVAL = 1
 
+# Filename for server-side saved model
+SERVER_MODEL_FILENAME = 'model.pkl'
+USER_MODEL_FNAME_BASE = 'model'
+
 # Path to text sources for grad producers (relative to produce_grads.py)
 PATH_TO_DATA = 'text_sources/'
 

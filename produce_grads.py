@@ -6,7 +6,7 @@ import torch
 from confluent_kafka import Producer
 from confluent_kafka.serialization import StringSerializer
 
-from constants import HIDDEN_SIZE, CREATE_SAMPLE_INTERVAL, GRAD_TOPIC_NAME, PROMPT_LOG_INTERVAL, WAIT_TIME_ON_BUFFER_ERROR, PATH_TO_DATA
+from constants import HIDDEN_SIZE, CREATE_SAMPLE_INTERVAL, GRAD_TOPIC_NAME, USER_MODEL_FNAME_BASE, PROMPT_LOG_INTERVAL, WAIT_TIME_ON_BUFFER_ERROR, PATH_TO_DATA
 from lstm_model import LSTM
 from text_generator import TextGenerator
 from helpers import pprinter, append_to_tsv, buffer_too_full
@@ -49,6 +49,7 @@ def run_grad_producer(conn: Pipe, text_source: str, user_id: int):
     # Set up model
     model = LSTM(**model_config)
     loss_fn = torch.nn.CrossEntropyLoss()
+    model_filename = f"{USER_MODEL_FNAME_BASE}_{user_id}.pkl"
 
     # Set up sample text generator
     text_gen = TextGenerator(**text_gen_config)
@@ -65,7 +66,8 @@ def run_grad_producer(conn: Pipe, text_source: str, user_id: int):
         try:
             # Check if there's a new model
             if conn.poll():
-                model = pickle.loads(conn.recv())
+                _ = conn.recv()
+                model = pickle.load(open(model_filename, 'rb'))
                 printer("New model received")
             """
             SIMULATE USAGE

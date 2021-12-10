@@ -1,10 +1,11 @@
 from multiprocessing import Pipe
 import pickle
+import time
 import torch
 from confluent_kafka import Producer
 from confluent_kafka.serialization import StringSerializer
 
-from constants import WAIT_TIME_ON_BUFFER_ERROR, MODEL_TOPIC_NAME
+from constants import WAIT_TIME_ON_BUFFER_ERROR, MODEL_TOPIC_NAME, SERVER_MODEL_FILENAME
 from helpers import pprinter, buffer_too_full
 
 PROGRAM_NAME = "produce_models.py"
@@ -50,8 +51,9 @@ def run_model_producer(conn: Pipe) -> None:
             if not conn.poll(1):
                 continue
 
-            # Get the model from the pipe
-            model = pickle.loads(conn.recv())
+            # Get the saved model from disk
+            _ = conn.recv()  # Clear the pipe queue
+            model = pickle.load(open(SERVER_MODEL_FILENAME, 'rb'))
             printer("Model producer received an updated model...")
 
             # Confirm model has been updated
@@ -73,8 +75,8 @@ def run_model_producer(conn: Pipe) -> None:
                 model.updated = False
         except BufferError:
             printer("BufferError encountered. Waiting for buffer to clear...")
-            while buffer_too_full(producer=p):
-                printer(f"Messages in queue: {p.flush(0)}")
+            while buffer_too_full(producer=producer):
+                printer(f"Messages in queue: {producer.flush(0)}")
                 time.sleep(WAIT_TIME_ON_BUFFER_ERROR)
         except KeyboardInterrupt:
             producer.flush(30)
