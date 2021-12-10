@@ -11,7 +11,7 @@ PATH_TO_DATA = 'text_sources/'
 PROMPT_LOG_FILENAME = 'prompts.txt'
 
 # produce_grads.py: log every nth prompt/target/prediction
-PROMPT_LOG_INTERVAL = 50
+PROMPT_LOG_INTERVAL = 10
 
 # Push a new model every n gradient steps
 STEPS_FOR_NEW_MODEL = 3

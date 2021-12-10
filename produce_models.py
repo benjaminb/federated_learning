@@ -12,6 +12,8 @@ printer = pprinter(PROGRAM_NAME)
 
 
 def run_model_producer(conn: Pipe) -> None:
+    print("Starting model producer")
+
     def ack(err, msg):
         """@err: error thrown by producer
             @msg: the kafka message object"""
@@ -26,8 +28,10 @@ def run_model_producer(conn: Pipe) -> None:
     printer("Model producer starting...")
 
     producer_config = {
-        'bootstrap.servers': 'localhost:9092',
-        'message.max.bytes': 15000000,
+        'bootstrap.servers': 'kafka:9092',
+        'message.max.bytes': 150000000,
+        # 'reconnect.backoff.ms': 15000,
+        # 'reconnect.backoff.max.ms': 15001,
     }
 
     producer = Producer(producer_config)
@@ -47,7 +51,7 @@ def run_model_producer(conn: Pipe) -> None:
                 continue
 
             # Get the model from the pipe
-            model = conn.recv()
+            model = pickle.loads(conn.recv())
             printer("Model producer received an updated model...")
 
             # Confirm model has been updated

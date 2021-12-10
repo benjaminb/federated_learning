@@ -15,6 +15,8 @@ PROGRAM_NAME = 'produce_grads.py'
 
 
 def run_grad_producer(conn: Pipe, text_source: str, user_id: int):
+    print("Starting grad producer")
+
     # Acknowledgement callback
     def ack(err, msg):
         """@err: error thrown by producer
@@ -38,8 +40,10 @@ def run_grad_producer(conn: Pipe, text_source: str, user_id: int):
     model_config = {'hidden_size': HIDDEN_SIZE, 'tokenizer': None}
     text_gen_config = {'path_to_text': path_to_text}
     producer_config = {
-        'bootstrap.servers': 'localhost:9092',
-        'message.max.bytes': 15000000
+        'bootstrap.servers': 'kafka:9092',
+        'message.max.bytes': 150000000,
+        # 'reconnect.backoff.ms': 15000,
+        # 'reconnect.backoff.max.ms': 15001,
     }
 
     # Set up model
@@ -61,7 +65,7 @@ def run_grad_producer(conn: Pipe, text_source: str, user_id: int):
         try:
             # Check if there's a new model
             if conn.poll():
-                model = conn.recv()
+                model = pickle.loads(conn.recv())
                 printer("New model received")
             """
             SIMULATE USAGE

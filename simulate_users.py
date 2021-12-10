@@ -1,5 +1,6 @@
 import multiprocessing
 import os
+import time
 from multiprocessing import Process, Pipe
 from produce_grads import run_grad_producer
 from consume_models import run_model_consumer
@@ -7,6 +8,8 @@ from constants import PATH_TO_DATA, TEXT_SOURCES
 
 
 def main():
+    time.sleep(15)
+    print("simulate_users.py: starting up...")
     multiprocessing.set_start_method('spawn')
 
     text_sources = TEXT_SOURCES if TEXT_SOURCES else os.listdir(PATH_TO_DATA)

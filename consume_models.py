@@ -15,9 +15,9 @@ printer = pprinter(PROGRAM_NAME)
 
 
 def run_model_consumer(conn: Pipe, consumer_group_name: str) -> None:
+    print("Starting model consumer")
     settings = {
-        'bootstrap.servers':
-        'localhost:9092',  # Gotta specify the kafka cluster
+        'bootstrap.servers': 'kafka:9092',  # Gotta specify the kafka cluster
         'group.id': consumer_group_name,  # Gotta specify the group id
         'client.id': 'the-first-client',  # optional
         'enable.auto.commit': True,  # let the consumer auto-report its offset
@@ -27,7 +27,8 @@ def run_model_consumer(conn: Pipe, consumer_group_name: str) -> None:
             'auto.offset.reset':
             'smallest'  # start reading from earliest topic events
         },
-        'fetch.message.max.bytes': 15000000
+        # 'fetch.message.max.bytes': 15000000,
+        # 'reconnect.backoff.ms': 15000
     }
     model_config = {'hidden_size': 50, 'tokenizer': None}
 
@@ -78,7 +79,7 @@ def run_model_consumer(conn: Pipe, consumer_group_name: str) -> None:
 
                     # Push model back onto pipe
                     printer("Sending new model to grad producer...")
-                    conn.send(model)
+                    conn.send(pickle.dumps(model))
 
             # Case: KafkaError that we reached EOF for this partition
             elif msg.error().code() == KafkaError._PARTITION_EOF:
