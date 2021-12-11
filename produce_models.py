@@ -7,6 +7,7 @@ from confluent_kafka.serialization import StringSerializer
 
 from constants import WAIT_TIME_ON_BUFFER_ERROR, MODEL_TOPIC_NAME, SERVER_MODEL_FILENAME
 from helpers import pprinter, buffer_too_full
+from plot_losses import plot_losses
 
 PROGRAM_NAME = "produce_models.py"
 printer = pprinter(PROGRAM_NAME)
@@ -34,7 +35,6 @@ def run_model_producer(conn: Pipe) -> None:
         # 'reconnect.backoff.ms': 15000,
         # 'reconnect.backoff.max.ms': 15001,
     }
-
     producer = Producer(producer_config)
     serialize_str = StringSerializer()
 
@@ -42,6 +42,7 @@ def run_model_producer(conn: Pipe) -> None:
     printer("Model producer is waiting for initial model...")
     _ = conn.poll(timeout=None)
     printer("Model producer received initial model.")
+    losses = []
 
     while True:
         try:
@@ -55,10 +56,11 @@ def run_model_producer(conn: Pipe) -> None:
             _ = conn.recv()  # Clear the pipe queue
             model = pickle.load(open(SERVER_MODEL_FILENAME, 'rb'))
             printer("Model producer received an updated model...")
-
-            # Confirm model has been updated
-            # if not model.updated:
-            #     continue
+            """
+            PLOT LOSS
+            """
+            losses.append(model.eval_for_plot(batch_size=32))
+            plot_losses(losses)
             """
             SEND UPDATED MODEL
             """
@@ -73,6 +75,7 @@ def run_model_producer(conn: Pipe) -> None:
                                  callback=ack)
                 producer.poll(0)  # Trigger queue cleaning
                 model.updated = False
+
         except BufferError:
             printer("BufferError encountered. Waiting for buffer to clear...")
             while buffer_too_full(producer=producer):

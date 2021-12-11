@@ -6,19 +6,18 @@ from confluent_kafka import Consumer, KafkaError
 from confluent_kafka.serialization import StringDeserializer
 from typing import DefaultDict, List
 
-from constants import MODEL_TOPIC_NAME, USER_MODEL_FNAME_BASE
+from constants import MODEL_TOPIC_NAME
 from lstm_model import LSTM
 from helpers import pprinter
 
 PROGRAM_NAME = 'consume_models.py'
-printer = pprinter(PROGRAM_NAME)
 
 
 def run_model_consumer(conn: Pipe, consumer_group_name: str,
                        user_id: int) -> None:
-    print("Starting model consumer")
     settings = {
-        'bootstrap.servers': 'kafka:9092',  # Gotta specify the kafka cluster
+        'bootstrap.servers':
+        'localhost:9092',  # Gotta specify the kafka cluster
         'group.id': consumer_group_name,  # Gotta specify the group id
         'client.id': 'the-first-client',  # optional
         'enable.auto.commit': True,  # let the consumer auto-report its offset
@@ -28,17 +27,14 @@ def run_model_consumer(conn: Pipe, consumer_group_name: str,
             'auto.offset.reset':
             'smallest'  # start reading from earliest topic events
         },
-        # 'fetch.message.max.bytes': 15000000,
-        # 'reconnect.backoff.ms': 15000
+        'fetch.message.max.bytes': 15000000
     }
     model_config = {'hidden_size': 50, 'tokenizer': None}
-
+    printer = pprinter(PROGRAM_NAME, user_id)
     # Instantiate a model & send to model producer to distribute
     model = LSTM(**model_config)
-    model_filename = f"{USER_MODEL_FNAME_BASE}_{user_id}.pkl"
-    pickle.dump(model, open(model_filename, 'wb'))
-    printer(f"Initial model created, sending to grad producer...")
-    conn.send(1)
+    conn.send(model)
+    printer(f"Initial model created, sending to model producer...")
 
     # Get the model layer names
     layer_names = [p[0] for p in model.named_parameters()]
@@ -69,21 +65,21 @@ def run_model_consumer(conn: Pipe, consumer_group_name: str,
             # Case: messages received and no error
             if not msg.error():
                 key = deserialize_str(msg.key(), None)
-                value = pickle.loads(msg.value())
-                weight_dict[key] = value
+                model = pickle.loads(msg.value())
 
-                if ready_to_update(weight_dict):
-                    printer("Ready to update model, rewriting weights...")
-                    model.replace_weights(weight_dict)
-                    printer("Model weights updated.")
+                # weight_dict[key] = value
 
-                    # Reset gradient dictionary
-                    weight_dict = defaultdict(None)
+                # if ready_to_update(weight_dict):
+                #     printer("Ready to update model, rewriting weights...")
+                #     model.replace_weights(weight_dict)
+                #     printer("Model weights updated.")
 
-                    # Push model back onto pipe
-                    printer("Sending new model to grad producer...")
-                    pickle.dump(model, open(model_filename, 'wb'))
-                    conn.send(1)
+                #     # Reset gradient dictionary
+                #     weight_dict = defaultdict(None)
+
+                #     # Push model back onto pipe
+                #     printer("Sending new model to grad producer...")
+                #     conn.send(model)
 
             # Case: KafkaError that we reached EOF for this partition
             elif msg.error().code() == KafkaError._PARTITION_EOF:

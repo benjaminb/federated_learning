@@ -17,7 +17,7 @@ def pprinter(program_name: str, tag: str = None):
     """
     Binds @program_name to print statement for cleaner print statements
     """
-    first_col = 17
+    first_col = 19
     if tag:
         program_name += f'/{tag}'
 
