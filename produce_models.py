@@ -6,6 +6,7 @@ from confluent_kafka.serialization import StringSerializer
 
 from constants import WAIT_TIME_ON_BUFFER_ERROR, MODEL_TOPIC_NAME
 from helpers import pprinter, buffer_too_full
+from plot_losses import plot_losses
 
 PROGRAM_NAME = "produce_models.py"
 printer = pprinter(PROGRAM_NAME)
@@ -38,6 +39,11 @@ def run_model_producer(conn: Pipe) -> None:
     _ = conn.poll(timeout=None)
     printer("Model producer received initial model.")
 
+    # Get the initial model and extract layer names
+    model = conn.recv()
+    layer_names = [p[0] for p in model.named_parameters()]
+    printer(f"Got model layer names: {layer_names}")
+
     while True:
         try:
             """
@@ -49,10 +55,22 @@ def run_model_producer(conn: Pipe) -> None:
             # Get the model from the pipe
             model = conn.recv()
             printer("Model producer received an updated model...")
-
-            # Confirm model has been updated
-            # if not model.updated:
-            #     continue
+            """
+            MAKE LOSS PLOT
+            """
+            # print(f"losses before: {model.losses}")
+            # plot_losses(model.losses)
+            # print(f"losses after: {model.losses}")
+            """
+            SEND MESSAGE
+            """
+            # Send the model to the kafka topic
+            producer.produce(MODEL_TOPIC_NAME,
+                             key=serialize_str("model", None),
+                             value=pickle.dumps(model))
+            producer.poll(0)
+            model.eval_for_plot(batch_size=32)
+            plot_losses(model.losses)
             """
             SEND UPDATED MODEL
             """

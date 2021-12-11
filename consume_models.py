@@ -65,23 +65,21 @@ def run_model_consumer(conn: Pipe, consumer_group_name: str) -> None:
             # Case: messages received and no error
             if not msg.error():
                 key = deserialize_str(msg.key(), None)
-                value = pickle.loads(msg.value())
-                weight_dict[key] = value
+                model = pickle.loads(msg.value())
 
-                if ready_to_update(weight_dict):
-                    printer("Ready to update model, rewriting weights...")
-                    model.replace_weights(weight_dict)
-                    printer("Model weights updated.")
+                # weight_dict[key] = value
 
-                    # Run tensorboard
-                    # model.eval_for_tensorboard(10)
+                # if ready_to_update(weight_dict):
+                #     printer("Ready to update model, rewriting weights...")
+                #     model.replace_weights(weight_dict)
+                #     printer("Model weights updated.")
 
-                    # Reset gradient dictionary
-                    weight_dict = defaultdict(None)
+                #     # Reset gradient dictionary
+                #     weight_dict = defaultdict(None)
 
-                    # Push model back onto pipe
-                    printer("Sending new model to grad producer...")
-                    conn.send(model)
+                #     # Push model back onto pipe
+                #     printer("Sending new model to grad producer...")
+                #     conn.send(model)
 
             # Case: KafkaError that we reached EOF for this partition
             elif msg.error().code() == KafkaError._PARTITION_EOF:

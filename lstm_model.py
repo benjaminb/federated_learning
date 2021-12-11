@@ -23,8 +23,7 @@ class LSTM(torch.nn.Module):
         self.step_counter = 0
         self.text_generator = TextGenerator(path_to_text=path_to_text)
         self.loss_fn = torch.nn.CrossEntropyLoss()
-        self.writer = SummaryWriter()  # For tensorboard
-        self.tb_counter = 0
+        self.losses = []
 
         # Define layers
         self.embedding = torch.nn.Embedding(self.vocab_size, self.hidden_size)
@@ -93,7 +92,7 @@ class LSTM(torch.nn.Module):
         text_ids = self.tokenizer.convert_tokens_to_ids(text)
         return torch.LongTensor([text_ids])
 
-    def eval_for_tensorboard(self, batch_size: int) -> None:
+    def eval_for_plot(self, batch_size: int) -> None:
         """
         Evaluates the model for Tensorboard
         """
@@ -103,10 +102,7 @@ class LSTM(torch.nn.Module):
             prompt, label = self.text_generator.generate_sample()
             target = self.label_to_tensor(label)
             logits = self.forward(prompt)
-            loss += self.loss_fn(logits, target)
+            loss += self.loss_fn(logits, target).item()
 
         # Compute average loss and send to writer
-        loss /= batch_size
-        self.writer.add_scalar('loss', loss, self.tb_counter)
-        self.tb_counter += 1
-        self.writer.flush()
+        self.losses.append(loss / batch_size)
