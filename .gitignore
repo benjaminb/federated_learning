@@ -5,8 +5,8 @@
 test.py
 test_gen.py
 prompts.txt
-runs
 *.png
+*.lan
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
