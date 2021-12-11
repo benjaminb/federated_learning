@@ -1,8 +1,14 @@
+import os
 import time
 import torch
+from torch.utils.tensorboard import SummaryWriter
 from transformers import BertTokenizerFast
 from typing import DefaultDict, List
+from constants import LEARNING_RATE, PATH_TO_DATA
+from text_generator import TextGenerator
 from helpers import rgetattr
+
+path_to_text = os.path.join(PATH_TO_DATA, 'all.txt')
 
 
 class LSTM(torch.nn.Module):
@@ -14,6 +20,8 @@ class LSTM(torch.nn.Module):
         self.vocab_size = self.tokenizer.vocab_size
         self.updated = False
         self.step_counter = 0
+        self.text_generator = TextGenerator(path_to_text=path_to_text)
+        self.loss_fn = torch.nn.CrossEntropyLoss()
 
         # Define layers
         self.embedding = torch.nn.Embedding(self.vocab_size, self.hidden_size)
@@ -49,13 +57,12 @@ class LSTM(torch.nn.Module):
 
     def update(self,
                grad_dict: DefaultDict[str, List[torch.tensor]],
-               lr=0.01) -> None:
+               lr=LEARNING_RATE) -> None:
         '''Updates the weights of the model'''
         with torch.no_grad():
             for layer, grad_list in grad_dict.items():
                 # Average the gradient
                 batch_gradient = torch.mean(torch.stack(grad_list), dim=0)
-
                 # Resolve the layer and perform gradient descent
                 parameter = rgetattr(self, layer)
                 parameter.data -= lr * batch_gradient
@@ -82,3 +89,18 @@ class LSTM(torch.nn.Module):
         """
         text_ids = self.tokenizer.convert_tokens_to_ids(text)
         return torch.LongTensor([text_ids])
+
+    def eval_for_plot(self, batch_size: int) -> float:
+        """
+        Evaluates the model for Tensorboard
+        """
+        # Get losses
+        loss = 0
+        for i in range(batch_size):
+            prompt, label = self.text_generator.generate_sample()
+            target = self.label_to_tensor(label)
+            logits = self.forward(prompt)
+            loss += self.loss_fn(logits, target).item()
+
+        # Compute average loss and send to writer
+        return loss / batch_size

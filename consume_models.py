@@ -11,10 +11,10 @@ from lstm_model import LSTM
 from helpers import pprinter
 
 PROGRAM_NAME = 'consume_models.py'
-printer = pprinter(PROGRAM_NAME)
 
 
-def run_model_consumer(conn: Pipe, consumer_group_name: str) -> None:
+def run_model_consumer(conn: Pipe, consumer_group_name: str,
+                       user_id: int) -> None:
     settings = {
         'bootstrap.servers':
         'localhost:9092',  # Gotta specify the kafka cluster
@@ -30,7 +30,7 @@ def run_model_consumer(conn: Pipe, consumer_group_name: str) -> None:
         'fetch.message.max.bytes': 15000000
     }
     model_config = {'hidden_size': 50, 'tokenizer': None}
-
+    printer = pprinter(PROGRAM_NAME, user_id)
     # Instantiate a model & send to model producer to distribute
     model = LSTM(**model_config)
     conn.send(model)
@@ -65,20 +65,21 @@ def run_model_consumer(conn: Pipe, consumer_group_name: str) -> None:
             # Case: messages received and no error
             if not msg.error():
                 key = deserialize_str(msg.key(), None)
-                value = pickle.loads(msg.value())
-                weight_dict[key] = value
+                model = pickle.loads(msg.value())
 
-                if ready_to_update(weight_dict):
-                    printer("Ready to update model, rewriting weights...")
-                    model.replace_weights(weight_dict)
-                    printer("Model weights updated.")
+                # weight_dict[key] = value
 
-                    # Reset gradient dictionary
-                    weight_dict = defaultdict(None)
+                # if ready_to_update(weight_dict):
+                #     printer("Ready to update model, rewriting weights...")
+                #     model.replace_weights(weight_dict)
+                #     printer("Model weights updated.")
 
-                    # Push model back onto pipe
-                    printer("Sending new model to grad producer...")
-                    conn.send(model)
+                #     # Reset gradient dictionary
+                #     weight_dict = defaultdict(None)
+
+                #     # Push model back onto pipe
+                #     printer("Sending new model to grad producer...")
+                #     conn.send(model)
 
             # Case: KafkaError that we reached EOF for this partition
             elif msg.error().code() == KafkaError._PARTITION_EOF:

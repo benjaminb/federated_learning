@@ -5,6 +5,9 @@
 test.py
 test_gen.py
 prompts.txt
+run
+*.png
+*.lan
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
