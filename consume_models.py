@@ -68,7 +68,7 @@ def run_model_consumer(conn: Pipe, consumer_group_name: str,
             # Case: messages received and no error
             if not msg.error():
                 key = deserialize_str(msg.key(), None)
-                model = pickle.loads(msg.value())
+                value = pickle.loads(msg.value())
 
                 weight_dict[key] = value
 
