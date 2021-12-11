@@ -4,7 +4,7 @@ import torch
 from torch.utils.tensorboard import SummaryWriter
 from transformers import BertTokenizerFast
 from typing import DefaultDict, List
-from constants import PATH_TO_DATA
+from constants import LEARNING_RATE, PATH_TO_DATA
 from text_generator import TextGenerator
 from helpers import rgetattr
 
@@ -57,7 +57,7 @@ class LSTM(torch.nn.Module):
 
     def update(self,
                grad_dict: DefaultDict[str, List[torch.tensor]],
-               lr=0.1) -> None:
+               lr=LEARNING_RATE) -> None:
         '''Updates the weights of the model'''
         with torch.no_grad():
             for layer, grad_list in grad_dict.items():
