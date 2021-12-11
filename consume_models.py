@@ -11,10 +11,10 @@ from lstm_model import LSTM
 from helpers import pprinter
 
 PROGRAM_NAME = 'consume_models.py'
-printer = pprinter(PROGRAM_NAME)
 
 
-def run_model_consumer(conn: Pipe, consumer_group_name: str) -> None:
+def run_model_consumer(conn: Pipe, consumer_group_name: str,
+                       user_id: int) -> None:
     settings = {
         'bootstrap.servers':
         'localhost:9092',  # Gotta specify the kafka cluster
@@ -30,7 +30,7 @@ def run_model_consumer(conn: Pipe, consumer_group_name: str) -> None:
         'fetch.message.max.bytes': 15000000
     }
     model_config = {'hidden_size': 50, 'tokenizer': None}
-
+    printer = pprinter(PROGRAM_NAME, user_id)
     # Instantiate a model & send to model producer to distribute
     model = LSTM(**model_config)
     conn.send(model)

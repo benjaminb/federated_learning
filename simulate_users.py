@@ -18,7 +18,7 @@ def main():
         producer = Process(target=run_grad_producer,
                            args=(p_pipe, text_source, i))
         consumer = Process(target=run_model_consumer,
-                           args=(c_pipe, f'{text_source[:-4]}-consumer-gp'))
+                           args=(c_pipe, f'{text_source[:-4]}-consumer-gp', i))
 
         producers.append(producer)
         consumers.append(consumer)

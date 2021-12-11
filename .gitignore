@@ -5,6 +5,7 @@
 test.py
 test_gen.py
 prompts.txt
+run
 *.png
 *.lan
 
