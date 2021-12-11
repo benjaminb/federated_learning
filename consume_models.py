@@ -73,6 +73,9 @@ def run_model_consumer(conn: Pipe, consumer_group_name: str) -> None:
                     model.replace_weights(weight_dict)
                     printer("Model weights updated.")
 
+                    # Run tensorboard
+                    # model.eval_for_tensorboard(10)
+
                     # Reset gradient dictionary
                     weight_dict = defaultdict(None)
 

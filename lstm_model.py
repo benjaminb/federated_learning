@@ -1,8 +1,15 @@
+import os
 import time
 import torch
+from torch.utils.tensorboard import SummaryWriter
 from transformers import BertTokenizerFast
 from typing import DefaultDict, List
+from constants import PATH_TO_DATA
+from text_generator import TextGenerator
 from helpers import rgetattr
+
+# Set the text for tensorboard evaluation here
+path_to_text = os.path.join(PATH_TO_DATA, 'secretgarden.txt')
 
 
 class LSTM(torch.nn.Module):
@@ -14,6 +21,10 @@ class LSTM(torch.nn.Module):
         self.vocab_size = self.tokenizer.vocab_size
         self.updated = False
         self.step_counter = 0
+        self.text_generator = TextGenerator(path_to_text=path_to_text)
+        self.loss_fn = torch.nn.CrossEntropyLoss()
+        self.writer = SummaryWriter()  # For tensorboard
+        self.tb_counter = 0
 
         # Define layers
         self.embedding = torch.nn.Embedding(self.vocab_size, self.hidden_size)
@@ -81,3 +92,21 @@ class LSTM(torch.nn.Module):
         """
         text_ids = self.tokenizer.convert_tokens_to_ids(text)
         return torch.LongTensor([text_ids])
+
+    def eval_for_tensorboard(self, batch_size: int) -> None:
+        """
+        Evaluates the model for Tensorboard
+        """
+        # Get losses
+        loss = 0
+        for i in range(batch_size):
+            prompt, label = self.text_generator.generate_sample()
+            target = self.label_to_tensor(label)
+            logits = self.forward(prompt)
+            loss += self.loss_fn(logits, target)
+
+        # Compute average loss and send to writer
+        loss /= batch_size
+        self.writer.add_scalar('loss', loss, self.tb_counter)
+        self.tb_counter += 1
+        self.writer.flush()
