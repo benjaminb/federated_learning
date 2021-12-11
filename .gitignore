@@ -2,6 +2,7 @@
 
 # Data and test files
 *.pkl
+model*
 test.py
 test_gen.py
 prompts.txt
