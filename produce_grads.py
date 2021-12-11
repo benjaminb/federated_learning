@@ -15,8 +15,6 @@ PROGRAM_NAME = 'produce_grads.py'
 
 
 def run_grad_producer(conn: Pipe, text_source: str, user_id: int):
-    print("Starting grad producer")
-
     # Acknowledgement callback
     def ack(err, msg):
         """@err: error thrown by producer
@@ -35,6 +33,7 @@ def run_grad_producer(conn: Pipe, text_source: str, user_id: int):
         path_to_text), f"PROBLEM: {path_to_text} does not exist"
 
     printer = pprinter("user", tag=str(user_id))
+    printer("Starting grad producer")
 
     # Configs
     model_config = {'hidden_size': HIDDEN_SIZE, 'tokenizer': None}
@@ -42,14 +41,12 @@ def run_grad_producer(conn: Pipe, text_source: str, user_id: int):
     producer_config = {
         'bootstrap.servers': 'kafka:9092',
         'message.max.bytes': 150000000,
-        # 'reconnect.backoff.ms': 15000,
-        # 'reconnect.backoff.max.ms': 15001,
     }
 
     # Set up model
     model = LSTM(**model_config)
     loss_fn = torch.nn.CrossEntropyLoss()
-    model_filename = f"{USER_MODEL_FNAME_BASE}_{user_id}.pkl"
+    model_filename = USER_MODEL_FNAME_BASE + str(user_id)
 
     # Set up sample text generator
     text_gen = TextGenerator(**text_gen_config)
@@ -67,7 +64,7 @@ def run_grad_producer(conn: Pipe, text_source: str, user_id: int):
             # Check if there's a new model
             if conn.poll():
                 _ = conn.recv()
-                model = pickle.load(open(model_filename, 'rb'))
+                model = torch.load(model_filename)
                 printer("New model received")
             """
             SIMULATE USAGE

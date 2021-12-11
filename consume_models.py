@@ -6,7 +6,7 @@ from confluent_kafka import Consumer, KafkaError
 from confluent_kafka.serialization import StringDeserializer
 from typing import DefaultDict, List
 
-from constants import MODEL_TOPIC_NAME
+from constants import MODEL_TOPIC_NAME, USER_MODEL_FNAME_BASE
 from lstm_model import LSTM
 from helpers import pprinter
 
@@ -31,9 +31,12 @@ def run_model_consumer(conn: Pipe, consumer_group_name: str,
     }
     model_config = {'hidden_size': 50, 'tokenizer': None}
     printer = pprinter(PROGRAM_NAME, user_id)
+
     # Instantiate a model & send to model producer to distribute
     model = LSTM(**model_config)
-    conn.send(model)
+    model_filename = USER_MODEL_FNAME_BASE + str(user_id)
+    torch.save(model, open(model_filename, 'wb'))
+    conn.send(1)
     printer(f"Initial model created, sending to model producer...")
 
     # Get the model layer names
@@ -67,19 +70,20 @@ def run_model_consumer(conn: Pipe, consumer_group_name: str,
                 key = deserialize_str(msg.key(), None)
                 model = pickle.loads(msg.value())
 
-                # weight_dict[key] = value
+                weight_dict[key] = value
 
-                # if ready_to_update(weight_dict):
-                #     printer("Ready to update model, rewriting weights...")
-                #     model.replace_weights(weight_dict)
-                #     printer("Model weights updated.")
+                if ready_to_update(weight_dict):
+                    printer("Ready to update model, rewriting weights...")
+                    model.replace_weights(weight_dict)
+                    printer("Model weights updated.")
 
-                #     # Reset gradient dictionary
-                #     weight_dict = defaultdict(None)
+                    # Reset gradient dictionary
+                    weight_dict = defaultdict(None)
 
-                #     # Push model back onto pipe
-                #     printer("Sending new model to grad producer...")
-                #     conn.send(model)
+                    # Push model back onto pipe
+                    printer("Sending new model to grad producer...")
+                    torch.save(model, open(model_filename, 'wb'))
+                    conn.send(1)
 
             # Case: KafkaError that we reached EOF for this partition
             elif msg.error().code() == KafkaError._PARTITION_EOF:
