@@ -37,7 +37,9 @@ def run_model_consumer(conn: Pipe, consumer_group_name: str,
     model_filename = USER_MODEL_FNAME_BASE + str(user_id)
     torch.save(model, open(model_filename, 'wb'))
     conn.send(1)
-    printer(f"Initial model created, sending to model producer...")
+    printer(
+        f"Initial model received by user {user_id}, sending to gradient producer..."
+    )
 
     # Get the model layer names
     layer_names = [p[0] for p in model.named_parameters()]

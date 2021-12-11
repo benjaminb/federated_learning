@@ -1,12 +1,14 @@
 .vscode/
 
 # Data and test files
-*.pkl
 model*
-test.py
-test_gen.py
 prompts.txt
 run
+server_model
+test.py
+test_gen.py
+user_model*
+*.pkl
 *.png
 *.lan
 

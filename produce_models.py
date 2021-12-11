@@ -1,4 +1,5 @@
 from multiprocessing import Pipe
+import os
 import pickle
 import time
 import torch
@@ -14,8 +15,6 @@ printer = pprinter(PROGRAM_NAME)
 
 
 def run_model_producer(conn: Pipe) -> None:
-    print("Starting model producer")
-
     def ack(err, msg):
         """@err: error thrown by producer
             @msg: the kafka message object"""
@@ -41,6 +40,8 @@ def run_model_producer(conn: Pipe) -> None:
     # Wait for consume_grads to send over initial model
     printer("Model producer is waiting for initial model...")
     _ = conn.poll(timeout=None)
+    _ = conn.recv()  # Clear the pipe
+    model = torch.load(SERVER_MODEL_FILENAME)
     printer("Model producer received initial model.")
     losses = []
 
@@ -54,7 +55,7 @@ def run_model_producer(conn: Pipe) -> None:
 
             # Get the saved model from disk
             _ = conn.recv()  # Clear the pipe queue
-            model = pickle.load(open(SERVER_MODEL_FILENAME, 'rb'))
+            model = torch.load(SERVER_MODEL_FILENAME)
             printer("Model producer received an updated model...")
             """
             PLOT LOSS

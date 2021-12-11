@@ -16,7 +16,6 @@ printer = pprinter(PROGRAM_NAME)
 
 
 def run_grad_consumer(conn: Pipe) -> None:
-    print("Starting grad consumer")
     settings = {
         'bootstrap.servers': 'localhost:9092',
         # 'bootstrap.servers': '192.168.86.22:9092',
@@ -36,7 +35,7 @@ def run_grad_consumer(conn: Pipe) -> None:
 
     # Instantiate a model & send to model producer to distribute
     model = LSTM(**model_config)
-    pickle.dump(model, open(SERVER_MODEL_FILENAME, 'wb'))
+    torch.save(model, open(SERVER_MODEL_FILENAME, 'wb'))
     conn.send(1)
     printer("Initial model created, sending to model producer...")
 
@@ -91,7 +90,7 @@ def run_grad_consumer(conn: Pipe) -> None:
 
                     # Push model back onto pipe
                     if model.step_counter >= STEPS_FOR_NEW_MODEL:
-                        pickle.dump(model, open(SERVER_MODEL_FILENAME, 'wb'))
+                        torch.save(model, open(SERVER_MODEL_FILENAME, 'wb'))
                         conn.send(1)
 
             # Case: KafkaError that we reached EOF for this partition

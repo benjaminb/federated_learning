@@ -8,8 +8,8 @@ CREATE_SAMPLE_INTERVAL = 0.1
 LEARNING_RATE = 0.05
 
 # Filename for server-side saved model
-SERVER_MODEL_FILENAME = 'model.pkl'
-USER_MODEL_FNAME_BASE = 'model'
+SERVER_MODEL_FILENAME = 'server_model'
+USER_MODEL_FNAME_BASE = 'user_model'
 
 # Path to text sources for grad producers (relative to produce_grads.py)
 PATH_TO_DATA = 'text_sources/'
