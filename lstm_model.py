@@ -49,13 +49,12 @@ class LSTM(torch.nn.Module):
 
     def update(self,
                grad_dict: DefaultDict[str, List[torch.tensor]],
-               lr=0.01) -> None:
+               lr=0.1) -> None:
         '''Updates the weights of the model'''
         with torch.no_grad():
             for layer, grad_list in grad_dict.items():
                 # Average the gradient
                 batch_gradient = torch.mean(torch.stack(grad_list), dim=0)
-
                 # Resolve the layer and perform gradient descent
                 parameter = rgetattr(self, layer)
                 parameter.data -= lr * batch_gradient
