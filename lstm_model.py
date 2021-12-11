@@ -8,8 +8,7 @@ from constants import PATH_TO_DATA
 from text_generator import TextGenerator
 from helpers import rgetattr
 
-# Set the text for tensorboard evaluation here
-path_to_text = os.path.join(PATH_TO_DATA, 'secretgarden.txt')
+path_to_text = os.path.join(PATH_TO_DATA, 'all.txt')
 
 
 class LSTM(torch.nn.Module):
