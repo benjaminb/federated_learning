@@ -39,7 +39,7 @@ def run_grad_producer(conn: Pipe, text_source: str, user_id: int):
     model_config = {'hidden_size': HIDDEN_SIZE, 'tokenizer': None}
     text_gen_config = {'path_to_text': path_to_text}
     producer_config = {
-        'bootstrap.servers': 'localhost:9092',
+        'bootstrap.servers': 'kafka:9092',
         'message.max.bytes': 150000000,
     }
 

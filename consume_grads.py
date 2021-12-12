@@ -17,7 +17,7 @@ printer = pprinter(PROGRAM_NAME)
 
 def run_grad_consumer(conn: Pipe) -> None:
     settings = {
-        'bootstrap.servers': 'localhost:9092',
+        'bootstrap.servers': 'kafka:9092',
         # 'bootstrap.servers': '192.168.86.22:9092',
         'group.id': 'grad-consumer-group',  # Gotta specify the group id
         'client.id': 'the-first-client',  # optional

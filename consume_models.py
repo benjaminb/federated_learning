@@ -16,8 +16,7 @@ PROGRAM_NAME = 'consume_models.py'
 def run_model_consumer(conn: Pipe, consumer_group_name: str,
                        user_id: int) -> None:
     settings = {
-        'bootstrap.servers':
-        'localhost:9092',  # Gotta specify the kafka cluster
+        'bootstrap.servers': 'kafka:9092',  # Gotta specify the kafka cluster
         'group.id': consumer_group_name,  # Gotta specify the group id
         'client.id': 'the-first-client',  # optional
         'enable.auto.commit': True,  # let the consumer auto-report its offset

@@ -1,7 +1,6 @@
 import os
 import time
 import torch
-from torch.utils.tensorboard import SummaryWriter
 from transformers import BertTokenizerFast
 from typing import DefaultDict, List
 from constants import LEARNING_RATE, PATH_TO_DATA

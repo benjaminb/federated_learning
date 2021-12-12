@@ -29,7 +29,7 @@ def run_model_producer(conn: Pipe) -> None:
     printer("Model producer starting...")
 
     producer_config = {
-        'bootstrap.servers': 'localhost:9092',
+        'bootstrap.servers': 'kafka:9092',
         'message.max.bytes': 150000000,
         # 'reconnect.backoff.ms': 15000,
         # 'reconnect.backoff.max.ms': 15001,

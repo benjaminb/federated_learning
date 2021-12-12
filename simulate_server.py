@@ -13,6 +13,7 @@ if __name__ == '__main__':
     consumer_pipe, producer_pipe = Pipe()
 
     consumer_proc = Process(target=run_grad_consumer, args=(consumer_pipe, ))
+    print("starting server side consumer...")
     consumer_proc.start()
 
     producer_proc = Process(target=run_model_producer, args=(producer_pipe, ))
