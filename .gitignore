@@ -7,6 +7,8 @@ test.py
 test_gen.py
 prompts.txt
 run
+server_model
+user_model*
 *.png
 *.lan
 
